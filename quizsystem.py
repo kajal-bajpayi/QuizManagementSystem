@@ -1,39 +1,51 @@
-# Import required modules
 import random
 
-# User Classes
 class Student:
-    def __init__(self, name, id):
+    def __init__(self, name, email, student_id, grade):
         self.name = name
-        self.id = id
-        self.score = 0
+        self.email = email
+        self.student_id = student_id
+        self.grade = grade
+
+    def answer_question(self, question):
+        answer = input(f"What is the answer to {question}? ")
+        return answer
 
 class Teacher:
-    def __init__(self, name, id):
+    def __init__(self, name, email, teacher_id, subject):
         self.name = name
-        self.id = id
-        self.quizzes = []
+        self.email = email
+        self.teacher_id = teacher_id
+        self.subject = subject
 
 class Parent:
-    def __init__(self, name, id):
+    def __init__(self, name, email, parent_id, child_name, child_grade):
         self.name = name
-        self.id = id
-        self.children = []
+        self.email = email
+        self.parent_id = parent_id
+        self.child_name = child_name
+        self.child_grade = child_grade
 
-# Quiz Class
 class Quiz:
-    def __init__(self, title, questions):
+    def __init__(self, title, description, questions, answers, due_date):
         self.title = title
+        self.description = description
         self.questions = questions
+        self.answers = answers
+        self.due_date = due_date
         self.participants = []
+        self.is_submitted = False
 
-# Question Class
-class Question:
-    def __init__(self, question, correct_answer):
-        self.question = question
-        self.correct_answer = correct_answer
+    def add_participant(self, participant):
+        self.participants.append(participant)
 
-# Quiz Management System Class
+    def submit_answers(self, participant, answers):
+        if participant not in self.participants:
+            raise ValueError(f"Participant {participant} is not a participant of quiz {self.title}.")
+
+        self.is_submitted = True
+        participant.answers = answers
+
 class QuizManagementSystem:
     def __init__(self):
         self.students = []
@@ -41,75 +53,61 @@ class QuizManagementSystem:
         self.parents = []
         self.quizzes = []
 
-    def create_quiz(self, title, questions):
-        quiz = Quiz(title, questions)
+    def create_quiz(self, title, description, questions, answers, due_date):
+        quiz = Quiz(title, description, questions, answers, due_date)
         self.quizzes.append(quiz)
+        return quiz
 
-    def invite_participant(self, quiz, participant):
-        quiz.participants.append(participant)
+    def invite_participants(self, email_addresses):
+        for email_address in email_addresses:
+            participant = None
+            for student in self.students:
+                if student.email == email_address:
+                    participant = student
+                    break
+            for teacher in self.teachers:
+                if teacher.email == email_address:
+                    participant = teacher
+                    break
+            for parent in self.parents:
+                if parent.email == email_address:
+                    participant = parent
+                    break
+            if participant is not None:
+                participant.quizzes.append(quiz)
 
-    def enable_submissions(self, quiz):
-        quiz.submissions_enabled = True
+    def enable_quiz_submissions(self):
+        for quiz in self.quizzes:
+            quiz.is_submitted = False
 
-    def retrieve_results(self, quiz):
-        results = {}
-        for participant in quiz.participants:
-            results[participant] = participant.score
-        return results
+    def retrieve_quiz_results(self):
+        quiz_results = []
+        for quiz in self.quizzes:
+            if quiz.is_submitted:
+                results = {}
+                for participant in quiz.participants:
+                    correct_answers = 0
+                    for question, answer in zip(quiz.questions, quiz.answers):
+                        if participant.answer_question(question) == answer:
+                            correct_answers += 1
+                    results[participant.name] = correct_answers
+                quiz_results.append(results)
+        return quiz_results
 
-    def display_quiz(self, quiz, participant):
-        for question in quiz.questions:
-            print(question.question)
-            answer = input("Your answer: ")
-            if answer == question.correct_answer:
-                participant.score += 1
-
-    def display_score(self, quiz, participant):
-        print("Your score for the quiz is {}.".format(participant.score))
-
-    def quit_or_retake(self, quiz, participant):
-        choice = input("Would you like to quit (q) or retake the quiz (r)? ")
-        if choice == "q":
-            print("Thanks for taking the quiz!")
-        elif choice == "r":
-            self.display_quiz(quiz, participant)
-        else:
-            print("Invalid choice. Please enter 'q' or 'r'.")
-
-# Testing and Usage
-def main():
-    # Create students
-    student1 = Student("John Doe", 12345)
-    student2 = Student("Jane Doe", 67890)
-
-    # Create teachers
-    teacher1 = Teacher("Mr. Smith", 123456)
-    teacher2 = Teacher("Mrs. Jones", 789012)
-
-    # Create parents
-    parent1 = Parent("John Doe Sr.", 123457)
-    parent2 = Parent("Jane Doe Sr.", 789013)
-
-    # Create a quiz
-    question1 = Question("What is 2+2?", "4")
-    question2 = Question("What is the capital of France?", "Paris")
-    quiz = Quiz("Math Quiz", [question1, question2])
-
-    # Add participants
-    quiz.participants.append(student1)
-    quiz.participants.append(student2)
-
-    # Enable submissions
-    quiz.submissions_enabled = True
-
-    # Display quiz to student1
-    QuizManagementSystem().display_quiz(quiz, student1)
-
-    # Display score for student1
-    QuizManagementSystem().display_score(quiz, student1)
-
-    # Give the user the option to quit or retake the quiz
-    QuizManagementSystem().quit_or_retake(quiz, student1)
 
 if __name__ == "__main__":
-    main()
+    quiz_management_system = QuizManagementSystem()
+
+    quiz = quiz_management_system.create_quiz(
+        title="Math Quiz",
+        description="A quiz about math concepts",
+        questions=["What is 2 + 2?", "What is the square root of 16?", "What is the answer to 6 x 7?"],
+        answers=["4", "4", "42"],
+        due_date="2023-08-01",
+    )
+
+    quiz_management_system.invite_participants(["student1@email.com", "student2@email.com"])
+
+    quiz_management_system.enable_quiz_submissions()
+
+    print("The quiz is now enabled. Participants can start taking the quiz.")
